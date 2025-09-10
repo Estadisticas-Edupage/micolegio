@@ -1319,7 +1319,7 @@
     for(let i=0;i<5;i++){ const v=sedes[i]??''; box.innerHTML+=`<div><label>Sede ${i+1}</label><input id="sede_${i}" value="${v}" placeholder="Nombre de la sede ${i+1}"></div>`; }
     const flt=document.getElementById('fltSede'); if(flt) flt.innerHTML='<option value="">Todas las sedes</option>'+sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join('');
   }
-  function __guardarSedes_orig(){
+  function guardarSedes(){
     const arr=[]; for(let i=0;i<5;i++){ const v=document.getElementById(`sede_${i}`).value.trim(); if(v) arr.push(v); }
     sedes = arr; LS.set('sedes',arr); alert('Sedes guardadas'); renderSedesInputs(); pintarTabla();
   }
@@ -1534,82 +1534,14 @@
 
   function renderSedesFiltros(){ const fltS=document.getElementById('fltSede'); if(!fltS) return; fltS.innerHTML='<option value="">Todas las sedes</option>'+sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join(''); }
   function init(){
-  try{refrescarFormulario();}catch(e){}
-
+  showByHash();
     actualizarLinks();
     renderSedesInputs(); renderSedesFiltros();
     renderAprobadores();
     refreshKPIs(); pintarTabla();
     applyDesigner();
     aplicarModoPublico();
-    if(window.lo
-// ==== FUSIÓN: Sincronizar Sede/Jornada, enganchar form interno, y utilidades ====
-
-// Sincroniza los <select> de Sede y Jornada del formulario con Roles
-function syncFormularioConSedesYJornadas(){
-  try{
-    // Sede
-    let selectSede=null;
-    document.querySelectorAll('#formContainer label').forEach(lb=>{
-      const t=(lb.textContent||'').trim().toLowerCase();
-      if(!selectSede && t.startsWith('sede')){
-        const id=lb.getAttribute('for');
-        selectSede = id ? document.getElementById(id) : lb.parentElement.querySelector('select');
-      }
-    });
-    if(selectSede && Array.isArray(sedes)){
-      const cur=selectSede.value;
-      selectSede.innerHTML = '<option value=\"\">Seleccione...</option>' + sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join('');
-      if([...selectSede.options].some(o=>o.value===cur)) selectSede.value=cur;
-    }
-    // Jornada (opcional)
-    let selectJ=null;
-    document.querySelectorAll('#formContainer label').forEach(lb=>{
-      const t=(lb.textContent||'').trim().toLowerCase();
-      if(!selectJ && t.startsWith('jornada')){
-        const id=lb.getAttribute('for');
-        selectJ = id ? document.getElementById(id) : lb.parentElement.querySelector('select');
-      }
-    });
-    if(selectJ){
-      const jornadas=['Mañana','Tarde','Única','Nocturna'];
-      const cur=selectJ.value;
-      selectJ.innerHTML = '<option value=\"\">Seleccione...</option>' + jornadas.map(j=>`<option>${j}</option>`).join('');
-      if([...selectJ.options].some(o=>o.value===cur)) selectJ.value=cur;
-    }
-  }catch(e){ console.warn('syncFormularioConSedesYJornadas()', e); }
-}
-
-// Engancha el submit del <form> interno y botones nativos con texto "enviar formulario"
-function engancharSubmitInterno(){
-  const cont=document.getElementById('formContainer');
-  if(!cont) return;
-  const form=cont.querySelector('form');
-  if(form){
-    form.addEventListener('submit', (e)=>{ e.preventDefault(); enviar(); });
-  }
-  cont.querySelectorAll('button').forEach(b=>{
-    const t=(b.textContent||'').toLowerCase();
-    if(t.includes('enviar formulario')){
-      b.addEventListener('click', (e)=>{ e.preventDefault(); enviar(); });
-    }
-  });
-}
-
-// Reaplica editor (renombrar/ocultar) y vuelve a enganchar envío
-function refrescarFormulario(){
-  try{ if(typeof applyEd==='function') applyEd(); }catch(e){}
-  syncFormularioConSedesYJornadas();
-  engancharSubmitInterno();
-}
-
-
-// Envoltura para guardarSedes → sincroniza Sede/Jornada al guardar
-function guardarSedes(){
-  try{ return __guardarSedes_orig.apply(this, arguments); }finally{ syncFormularioConSedesYJornadas(); }
-}
-
-cation.hash==='#padres'){ go('padres'); }
+    if(window.location.hash==='#padres'){ go('padres'); }
   }
   document.addEventListener('DOMContentLoaded', init);
 </script>
