@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>Sistema de Inscripciones – Integrado (Azul/Blanco) – Local</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--primary:#1565C0;--primary-600:#0D47A1;--bg:#f7f9fc;--card:#fff;--muted:#6b7280;--ok:#16a34a;--warn:#f59e0b;--bad:#dc2626;--info:#0891b2;--chip:#eef2ff;--radius:14px;}
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(135deg,#eef2ff,#f8fafc);margin:0;color:#0f172a}
+  .container{max-width:1200px;margin:auto;padding:24px}
+  .topbar{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .brand{font-weight:800;color:var(--primary);letter-spacing:.2px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;background:#e5e7eb;cursor:pointer}
+  .btn.primary{background:var(--primary);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid #e5e7eb}
+  .btn.success{background:var(--ok);color:#fff}
+  .btn.warn{background:var(--warn);color:#fff}
+  .btn.danger{background:var(--bad);color:#fff}
+  .btn.info{background:var(--info);color:#fff}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .grid{display:grid;gap:16px}
+  .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+  .muted{color:var(--muted)}
+  .section{display:none}
+  .section.active{display:block}
+  label{font-weight:600;font-size:.92rem;margin-bottom:6px;display:block}
+  input,select,textarea{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+  textarea{min-height:70px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}
+  th{background:#f1f5f9}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:.8rem;font-weight:700}
+  .pill.pending{background:#fff7ed;color:#9a3412}
+  .pill.approved{background:#ecfdf5;color:#065f46}
+  .pill.rejected{background:#fef2f2;color:#991b1b}
+  .pill.documents{background:#fff7ed;color:#9a3412}
+  .pill.blocked{background:#f1f5f9;color:#111827;border:1px solid #e5e7eb}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .h{margin:0 0 12px 0}
+  .sub{margin:0 0 6px 0;color:var(--muted);font-weight:500}
+  .chip{background:var(--chip);padding:6px 10px;border-radius:999px;font-weight:700;font-size:.8rem}
+  .right{justify-content:flex-end}
+  .login-box{max-width:520px;margin:auto}
+  .footer{margin:24px 0;color:#94a3b8;text-align:center;font-size:.85rem}
+  .hint{font-size:.85rem;color:#64748b}
+  .banner{background:#EFF6FF;border:1px dashed #93C5FD;color:#1E40AF;padding:10px 12px;border-radius:10px;margin:12px 0;font-weight:600}
+  .klink{color:var(--primary);text-decoration:underline;cursor:pointer}
+  .note{background:#fff8e1;border:1px solid #ffe082;padding:8px 10px;border-radius:8px;color:#7c5e10}
+  @media (max-width:900px){.grid.cols-3{grid-template-columns:1fr}.grid.cols-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar card" id="topbar">
+    <div>
+      <div class="brand">Sistema de Inscripciones – Colegio San José</div>
+      <div class="muted" style="font-size:.9rem">App integrada: Formulario, Inscripciones, Roles, Editor y Portal de Padres (Local).</div>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="btn primary" onclick="go('inicio')">Inicio</button>
+      <button class="btn" onclick="go('formulario')">Formulario</button>
+      <button class="btn" onclick="go('inscripciones')">Inscripciones</button>
+      <button class="btn" onclick="go('roles')">Roles de Aprobación</button>
+      <button class="btn" onclick="go('editor')">Editor</button>
+      <button class="btn" onclick="go('padres')">Portal Padres</button>
+    </div>
+  </div>
+
+  <section id="inicio" class="section active">
+    <div class="grid cols-3">
+      <div class="card"><h3 class="h">Resumen</h3><div class="muted">Total inscripciones</div><div id="kpiTotal" style="font-size:28px;font-weight:900;color:var(--primary)">0</div></div>
+      <div class="card"><div class="muted">Aprobadas</div><div id="kpiAprob" style="font-size:28px;font-weight:900;color:var(--ok)">0</div></div>
+      <div class="card"><div class="muted">Pendientes/Doc.</div><div id="kpiPend" style="font-size:28px;font-weight:900;color:var(--warn)">0</div></div>
+    </div>
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <h3 class="h">Enlaces para compartir</h3>
+        <p class="hint">Formulario público o Portal de Padres:</p>
+        <div class="grid cols-2">
+          <div><div class="sub">Formulario público</div><div><a id="linkPublico" class="klink" target="_blank">Abrir formulario</a></div></div>
+          <div><div class="sub">Portal de Padres</div><div><a id="linkPadres" class="klink" target="_blank">Abrir portal de padres</a></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 class="h">Notas para pruebas locales</h3>
+        <div class="note">
+          • Todo se guarda en <b>localStorage</b> (navegador).<br>
+          • Para publicar luego, súbelo a Netlify / GitHub Pages / Vercel.<br>
+          • Asegura que el formulario incluya <b>Sede</b> y <b>Jornada</b> (o agrégalos como campos personalizados).
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="formulario" class="section">
+    <div class="card">
+      <h3 class="h">Formulario de Inscripción</h3>
+      <div id="parentBanner" class="banner" style="display:none"></div>
+      <p class="hint">Tu formulario original está incrustado tal cual. Puedes ocultar/renombrar campos desde la pestaña <b>Editor</b>.</p>
+      <div id="formContainer"><!-- SECCIÓN 1: DATOS PERSONALES DEL ESTUDIANTE -->
+                <div class="form-section">1. DATOS PERSONALES DEL ESTUDIANTE</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Primer Nombre *</label>
+                        <input type="text" placeholder="Primer nombre" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Segundo Nombre</label>
+                        <input type="text" placeholder="Segundo nombre">
+                    </div>
+                    <div class="form-field">
+                        <label>Primer Apellido *</label>
+                        <input type="text" placeholder="Primer apellido" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Segundo Apellido *</label>
+                        <input type="text" placeholder="Segundo apellido" required>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Tipo de Documento *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Tarjeta de Identidad</option>
+                            <option>Registro Civil</option>
+                            <option>Cédula de Ciudadanía</option>
+                            <option>Cédula de Extranjería</option>
+                            <option>Pasaporte</option>
+                            <option>Permiso Especial de Permanencia</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Número de Documento *</label>
+                        <input type="text" placeholder="Número de documento" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Lugar de Expedición</label>
+                        <input type="text" placeholder="Ciudad de expedición">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Fecha de Nacimiento *</label>
+                        <input type="date" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Edad *</label>
+                        <input type="number" placeholder="Edad actual" min="3" max="25" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Género *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Masculino</option>
+                            <option>Femenino</option>
+                            <option>No binario</option>
+                            <option>Prefiero no decir</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Grupo Sanguíneo y RH *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>O+</option>
+                            <option>O-</option>
+                            <option>A+</option>
+                            <option>A-</option>
+                            <option>B+</option>
+                            <option>B-</option>
+                            <option>AB+</option>
+                            <option>AB-</option>
+                            <option>No sabe</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>País de Nacimiento *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option selected>Colombia</option>
+                            <option>Venezuela</option>
+                            <option>Ecuador</option>
+                            <option>Perú</option>
+                            <option>Brasil</option>
+                            <option>Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Departamento de Nacimiento *</label>
+                        <input type="text" placeholder="Departamento" value="Santander" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Ciudad/Municipio de Nacimiento *</label>
+                        <input type="text" placeholder="Ciudad o municipio" required>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 2: INFORMACIÓN DE CONTACTO Y RESIDENCIA -->
+                <div class="form-section">2. INFORMACIÓN DE CONTACTO Y RESIDENCIA</div>
+                <div class="form-field">
+                    <label>Dirección de Residencia *</label>
+                    <input type="text" placeholder="Dirección completa (Calle, Carrera, Número, Apartamento)" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Barrio *</label>
+                        <input type="text" placeholder="Barrio" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Comuna/Localidad</label>
+                        <input type="text" placeholder="Comuna o localidad">
+                    </div>
+                    <div class="form-field">
+                        <label>Ciudad/Municipio *</label>
+                        <input type="text" placeholder="Ciudad" value="Bucaramanga" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Departamento *</label>
+                        <input type="text" placeholder="Departamento" value="Santander" required>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Estrato Socioeconómico *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Teléfono Fijo</label>
+                        <input type="tel" placeholder="(607) 1234567">
+                    </div>
+                    <div class="form-field">
+                        <label>Celular del Estudiante</label>
+                        <input type="tel" placeholder="3001234567">
+                    </div>
+                    <div class="form-field">
+                        <label>Correo Electrónico</label>
+                        <input type="email" placeholder="estudiante@correo.com">
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 3: INFORMACIÓN ACADÉMICA -->
+                <div class="form-section">3. INFORMACIÓN ACADÉMICA</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Grado al que Aspira *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Jardín</option>
+                            <option>Transición</option>
+                            <option>Primero</option>
+                            <option>Segundo</option>
+                            <option>Tercero</option>
+                            <option>Cuarto</option>
+                            <option>Quinto</option>
+                            <option>Sexto</option>
+                            <option>Séptimo</option>
+                            <option>Octavo</option>
+                            <option>Noveno</option>
+                            <option>Décimo</option>
+                            <option>Undécimo</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Sede *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Sede Principal - Colegio Técnico Vicente Azuero</option>
+                            <option>Sede A - Lagos 2</option>
+                            <option>Sede B - Instituto Andrés Bello</option>
+                            <option>Sede C - Instituto Juan Pablo I</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Jornada *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Mañana (6:30 AM - 12:30 PM)</option>
+                            <option>Tarde (12:30 PM - 6:30 PM)</option>
+                            <option>Única</option>
+                            <option>Nocturna</option>
+                            <option>Sabatina</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>¿Es Repitente? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>No</option>
+                            <option>Sí - Primera vez</option>
+                            <option>Sí - Segunda vez</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>¿Estudiante Nuevo o Antiguo? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Estudiante Nuevo</option>
+                            <option>Estudiante Antiguo</option>
+                            <option>Reintegro</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label>Institución Educativa de Procedencia *</label>
+                    <input type="text" placeholder="Nombre completo del colegio anterior" required>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Último Grado Cursado *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Ninguno</option>
+                            <option>Jardín</option>
+                            <option>Transición</option>
+                            <option>Primero</option>
+                            <option>Segundo</option>
+                            <option>Tercero</option>
+                            <option>Cuarto</option>
+                            <option>Quinto</option>
+                            <option>Sexto</option>
+                            <option>Séptimo</option>
+                            <option>Octavo</option>
+                            <option>Noveno</option>
+                            <option>Décimo</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Año del Último Grado</label>
+                        <input type="number" placeholder="2024" min="2020" max="2024">
+                    </div>
+                    <div class="form-field">
+                        <label>Promedio General</label>
+                        <input type="number" placeholder="4.2" step="0.1" min="0" max="5">
+                    </div>
+                    <div class="form-field">
+                        <label>Puesto en el Curso</label>
+                        <input type="number" placeholder="5" min="1">
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 4: INFORMACIÓN DEL PADRE -->
+                <div class="form-section">4. INFORMACIÓN DEL PADRE</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Nombres del Padre</label>
+                        <input type="text" placeholder="Nombres completos">
+                    </div>
+                    <div class="form-field">
+                        <label>Apellidos del Padre</label>
+                        <input type="text" placeholder="Apellidos completos">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Tipo de Documento</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Cédula de Ciudadanía</option>
+                            <option>Cédula de Extranjería</option>
+                            <option>Pasaporte</option>
+                            <option>PEP</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Número de Documento</label>
+                        <input type="text" placeholder="Número">
+                    </div>
+                    <div class="form-field">
+                        <label>Fecha de Nacimiento</label>
+                        <input type="date">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Estado Civil</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Soltero</option>
+                            <option>Casado</option>
+                            <option>Unión Libre</option>
+                            <option>Divorciado</option>
+                            <option>Viudo</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Nivel Educativo</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Ninguno</option>
+                            <option>Primaria</option>
+                            <option>Bachillerato</option>
+                            <option>Técnico</option>
+                            <option>Tecnólogo</option>
+                            <option>Universitario</option>
+                            <option>Especialización</option>
+                            <option>Maestría</option>
+                            <option>Doctorado</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Profesión/Ocupación</label>
+                        <input type="text" placeholder="Profesión u ocupación">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Empresa donde Labora</label>
+                        <input type="text" placeholder="Nombre de la empresa">
+                    </div>
+                    <div class="form-field">
+                        <label>Cargo</label>
+                        <input type="text" placeholder="Cargo actual">
+                    </div>
+                    <div class="form-field">
+                        <label>Teléfono del Trabajo</label>
+                        <input type="tel" placeholder="(607) 1234567">
+                    </div>
+                    <div class="form-field">
+                        <label>Celular</label>
+                        <input type="tel" placeholder="3001234567">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Correo Electrónico</label>
+                        <input type="email" placeholder="padre@correo.com">
+                    </div>
+                    <div class="form-field">
+                        <label>Ingresos Mensuales</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Menos de 1 SMMLV</option>
+                            <option>1 a 2 SMMLV</option>
+                            <option>2 a 3 SMMLV</option>
+                            <option>3 a 4 SMMLV</option>
+                            <option>4 a 5 SMMLV</option>
+                            <option>Más de 5 SMMLV</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 5: INFORMACIÓN DE LA MADRE -->
+                <div class="form-section">5. INFORMACIÓN DE LA MADRE</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Nombres de la Madre</label>
+                        <input type="text" placeholder="Nombres completos">
+                    </div>
+                    <div class="form-field">
+                        <label>Apellidos de la Madre</label>
+                        <input type="text" placeholder="Apellidos completos">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Tipo de Documento</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Cédula de Ciudadanía</option>
+                            <option>Cédula de Extranjería</option>
+                            <option>Pasaporte</option>
+                            <option>PEP</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Número de Documento</label>
+                        <input type="text" placeholder="Número">
+                    </div>
+                    <div class="form-field">
+                        <label>Fecha de Nacimiento</label>
+                        <input type="date">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Estado Civil</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Soltera</option>
+                            <option>Casada</option>
+                            <option>Unión Libre</option>
+                            <option>Divorciada</option>
+                            <option>Viuda</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Nivel Educativo</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Ninguno</option>
+                            <option>Primaria</option>
+                            <option>Bachillerato</option>
+                            <option>Técnico</option>
+                            <option>Tecnólogo</option>
+                            <option>Universitario</option>
+                            <option>Especialización</option>
+                            <option>Maestría</option>
+                            <option>Doctorado</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Profesión/Ocupación</label>
+                        <input type="text" placeholder="Profesión u ocupación">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Empresa donde Labora</label>
+                        <input type="text" placeholder="Nombre de la empresa">
+                    </div>
+                    <div class="form-field">
+                        <label>Cargo</label>
+                        <input type="text" placeholder="Cargo actual">
+                    </div>
+                    <div class="form-field">
+                        <label>Teléfono del Trabajo</label>
+                        <input type="tel" placeholder="(607) 1234567">
+                    </div>
+                    <div class="form-field">
+                        <label>Celular</label>
+                        <input type="tel" placeholder="3001234567">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Correo Electrónico</label>
+                        <input type="email" placeholder="madre@correo.com">
+                    </div>
+                    <div class="form-field">
+                        <label>Ingresos Mensuales</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Menos de 1 SMMLV</option>
+                            <option>1 a 2 SMMLV</option>
+                            <option>2 a 3 SMMLV</option>
+                            <option>3 a 4 SMMLV</option>
+                            <option>4 a 5 SMMLV</option>
+                            <option>Más de 5 SMMLV</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 6: INFORMACIÓN DEL ACUDIENTE/RESPONSABLE -->
+                <div class="form-section">6. INFORMACIÓN DEL ACUDIENTE/RESPONSABLE</div>
+                <div class="form-field">
+                    <label>¿El acudiente es? *</label>
+                    <select required>
+                        <option value="">Seleccione...</option>
+                        <option value="padre">El Padre</option>
+                        <option value="madre">La Madre</option>
+                        <option value="otro">Otra Persona</option>
+                    </select>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Nombres del Acudiente *</label>
+                        <input type="text" placeholder="Nombres completos">
+                    </div>
+                    <div class="form-field">
+                        <label>Apellidos del Acudiente *</label>
+                        <input type="text" placeholder="Apellidos completos">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Tipo de Documento *</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Cédula de Ciudadanía</option>
+                            <option>Cédula de Extranjería</option>
+                            <option>Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Número de Documento *</label>
+                        <input type="text" placeholder="Número">
+                    </div>
+                    <div class="form-field">
+                        <label>Parentesco con el Estudiante *</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Abuelo(a)</option>
+                            <option>Tío(a)</option>
+                            <option>Hermano(a) Mayor</option>
+                            <option>Primo(a)</option>
+                            <option>Padrastro/Madrastra</option>
+                            <option>Tutor Legal</option>
+                            <option>Otro Familiar</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Profesión/Ocupación *</label>
+                        <input type="text" placeholder="Profesión u ocupación">
+                    </div>
+                    <div class="form-field">
+                        <label>Empresa donde Labora</label>
+                        <input type="text" placeholder="Nombre de la empresa">
+                    </div>
+                    <div class="form-field">
+                        <label>Teléfono Fijo</label>
+                        <input type="tel" placeholder="(607) 1234567">
+                    </div>
+                    <div class="form-field">
+                        <label>Celular *</label>
+                        <input type="tel" placeholder="3001234567">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label>Dirección de Residencia *</label>
+                    <input type="text" placeholder="Dirección completa del acudiente">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" placeholder="acudiente@correo.com">
+                    </div>
+                    <div class="form-field">
+                        <label>Horario Disponible para Contacto</label>
+                        <input type="text" placeholder="Ej: Lunes a Viernes 8am-5pm">
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 7: INFORMACIÓN MÉDICA Y DE SALUD -->
+                <div class="form-section">7. INFORMACIÓN MÉDICA Y DE SALUD</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>EPS/IPS *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Sura</option>
+                            <option>Sanitas</option>
+                            <option>Compensar</option>
+                            <option>Nueva EPS</option>
+                            <option>Salud Total</option>
+                            <option>Coomeva</option>
+                            <option>Famisanar</option>
+                            <option>Aliansalud</option>
+                            <option>Medimás</option>
+                            <option>Otra</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Tipo de Afiliación *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Cotizante</option>
+                            <option>Beneficiario</option>
+                            <option>SISBEN</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>IPS de Atención</label>
+                        <input type="text" placeholder="Centro médico de atención">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>¿Tiene Carnet de Vacunas? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Sí - Completo</option>
+                            <option>Sí - Incompleto</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Nivel de SISBEN</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>No tiene</option>
+                            <option>Grupo A</option>
+                            <option>Grupo B</option>
+                            <option>Grupo C</option>
+                            <option>Grupo D</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>¿Tiene alguna Discapacidad? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Ninguna</option>
+                            <option>Física/Motora</option>
+                            <option>Visual</option>
+                            <option>Auditiva</option>
+                            <option>Intelectual/Cognitiva</option>
+                            <option>Psicosocial/Mental</option>
+                            <option>Múltiple</option>
+                            <option>Trastorno del Espectro Autista</option>
+                            <option>Otra</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>¿Requiere Educación Especial?</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>No</option>
+                            <option>Sí - Apoyo Pedagógico</option>
+                            <option>Sí - Apoyo Terapéutico</option>
+                            <option>Sí - Ambos</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label>Alergias</label>
+                    <textarea rows="2" placeholder="Describa si tiene alergias a medicamentos, alimentos, picaduras, etc."></textarea>
+                </div>
+                
+                <div class="form-field">
+                    <label>Enfermedades o Condiciones Médicas</label>
+                    <textarea rows="2" placeholder="Asma, diabetes, epilepsia, problemas cardíacos, etc."></textarea>
+                </div>
+                
+                <div class="form-field">
+                    <label>Medicamentos que toma regularmente</label>
+                    <textarea rows="2" placeholder="Liste los medicamentos con dosis y frecuencia"></textarea>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Contacto de Emergencia (Nombre) *</label>
+                        <input type="text" placeholder="Nombre completo" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Teléfono de Emergencia *</label>
+                        <input type="tel" placeholder="3001234567" required>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 8: INFORMACIÓN SOCIOECONÓMICA -->
+                <div class="form-section">8. INFORMACIÓN SOCIOECONÓMICA</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>¿Es Víctima del Conflicto Armado? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>No</option>
+                            <option>Sí - Desplazamiento</option>
+                            <option>Sí - Amenaza</option>
+                            <option>Sí - Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>¿Pertenece a Población Vulnerable? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>No</option>
+                            <option>Desplazado</option>
+                            <option>Reinsertado</option>
+                            <option>Hijo de Desmovilizado</option>
+                            <option>Población en Extrema Pobreza</option>
+                            <option>Menor en Protección</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Grupo Étnico</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Ninguno</option>
+                            <option>Indígena</option>
+                            <option>Afrocolombiano</option>
+                            <option>Negro</option>
+                            <option>Mulato</option>
+                            <option>Raizal</option>
+                            <option>Palenquero</option>
+                            <option>ROM/Gitano</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>El estudiante vive con *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Ambos padres</option>
+                            <option>Solo madre</option>
+                            <option>Solo padre</option>
+                            <option>Madre y padrastro</option>
+                            <option>Padre y madrastra</option>
+                            <option>Abuelos</option>
+                            <option>Tíos</option>
+                            <option>Hermanos</option>
+                            <option>Otros familiares</option>
+                            <option>Hogar sustituto</option>
+                            <option>Institución de protección</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Número de Hermanos</label>
+                        <input type="number" placeholder="0" min="0">
+                    </div>
+                    <div class="form-field">
+                        <label>Posición entre hermanos</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Hijo único</option>
+                            <option>Mayor</option>
+                            <option>Intermedio</option>
+                            <option>Menor</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Personas en el hogar</label>
+                        <input type="number" placeholder="4" min="1">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Tipo de Vivienda *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Propia</option>
+                            <option>Arrendada</option>
+                            <option>Familiar</option>
+                            <option>En pago</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Servicios Públicos *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Todos los servicios</option>
+                            <option>Sin Internet</option>
+                            <option>Sin Gas</option>
+                            <option>Servicios básicos</option>
+                            <option>Servicios limitados</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Ingresos Familiares Totales</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Menos de 1 SMMLV</option>
+                            <option>1 a 2 SMMLV</option>
+                            <option>2 a 3 SMMLV</option>
+                            <option>3 a 5 SMMLV</option>
+                            <option>Más de 5 SMMLV</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 9: INFORMACIÓN TECNOLÓGICA Y DE TRANSPORTE -->
+                <div class="form-section">9. INFORMACIÓN TECNOLÓGICA Y DE TRANSPORTE</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>¿Tiene acceso a Internet en casa? *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Sí - Fibra óptica</option>
+                            <option>Sí - Internet móvil</option>
+                            <option>Sí - Internet limitado</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Dispositivos para estudiar *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>Computador de escritorio</option>
+                            <option>Computador portátil</option>
+                            <option>Tablet</option>
+                            <option>Celular inteligente</option>
+                            <option>Múltiples dispositivos</option>
+                            <option>Ninguno</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>¿Comparte el dispositivo?</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>No, es de uso personal</option>
+                            <option>Sí, con hermanos</option>
+                            <option>Sí, con padres</option>
+                            <option>Sí, con toda la familia</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Medio de Transporte al Colegio *</label>
+                        <select required>
+                            <option value="">Seleccione...</option>
+                            <option>A pie</option>
+                            <option>Bicicleta</option>
+                            <option>Transporte escolar</option>
+                            <option>Bus/Buseta pública</option>
+                            <option>Taxi/Uber</option>
+                            <option>Moto particular</option>
+                            <option>Carro particular</option>
+                            <option>Combinación de transportes</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Tiempo de desplazamiento</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Menos de 15 minutos</option>
+                            <option>15 a 30 minutos</option>
+                            <option>30 a 45 minutos</option>
+                            <option>45 minutos a 1 hora</option>
+                            <option>Más de 1 hora</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Distancia aproximada</label>
+                        <select>
+                            <option value="">Seleccione...</option>
+                            <option>Menos de 1 km</option>
+                            <option>1 a 3 km</option>
+                            <option>3 a 5 km</option>
+                            <option>5 a 10 km</option>
+                            <option>Más de 10 km</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 10: INFORMACIÓN ADICIONAL -->
+                <div class="form-section">10. INFORMACIÓN ADICIONAL</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>Religión</label>
+                        <input type="text" placeholder="Opcional">
+                    </div>
+                    <div class="form-field">
+                        <label>Iglesia/Congregación</label>
+                        <input type="text" placeholder="Opcional">
+                    </div>
+                </div>
+                
+                <div class="form-field">
+                    <label>Actividades Extracurriculares de Interés</label>
+                    <select multiple style="height: 100px;">
+                        <option>Deportes</option>
+                        <option>Música</option>
+                        <option>Danza</option>
+                        <option>Teatro</option>
+                        <option>Artes plásticas</option>
+                        <option>Robótica</option>
+                        <option>Ajedrez</option>
+                        <option>Idiomas</option>
+                        <option>Ciencias</option>
+                        <option>Matemáticas</option>
+                    </select>
+                    <small style="color: #666;">Mantenga presionado Ctrl para seleccionar múltiples opciones</small>
+                </div>
+                
+                <div class="form-field">
+                    <label>Talentos o Habilidades Especiales</label>
+                    <textarea rows="2" placeholder="Describa los talentos o habilidades especiales del estudiante"></textarea>
+                </div>
+                
+                <div class="form-field">
+                    <label>Expectativas del Colegio</label>
+                    <textarea rows="3" placeholder="¿Qué espera del colegio para la formación de su hijo(a)?"></textarea>
+                </div>
+                
+                <div class="form-field">
+                    <label>Observaciones Adicionales</label>
+                    <textarea rows="3" placeholder="Información adicional relevante para el proceso de matrícula"></textarea>
+                </div>
+                
+                <!-- SECCIÓN 11: FOTO Y FIRMAS DIGITALES -->
+                <div class="form-section">11. FOTOGRAFÍA Y FIRMAS DIGITALES</div>
+                
+                <!-- Campo de Foto del Estudiante -->
+                <div class="form-field">
+                    <label>Fotografía del Estudiante *</label>
+                    <div class="photo-container">
+                        <div class="photo-preview" id="photoPreview">
+                            <div style="color: #999;">
+                                <p style="font-size: 48px; margin: 0;">📷</p>
+                                <p>Sin foto</p>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <button type="button" class="btn btn-primary" onclick="subirFoto()">
+                                📁 Subir Foto
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="tomarFoto()">
+                                📸 Tomar Foto
+                            </button>
+                        </div>
+                        <small style="color: #666;">Foto tipo carnet, fondo blanco, rostro visible</small>
+                    </div>
+                </div>
+                
+                <!-- Firma del Acudiente -->
+                <div class="form-field">
+                    <label>Firma Digital del Acudiente *</label>
+                    <div class="signature-container">
+                        <div id="firmaAcudientePreview" style="border: 2px solid #ddd; height: 150px; background: white; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
+                            <div style="text-align: center; color: #999;">
+                                <p style="font-size: 48px; margin: 0;">✍️</p>
+                                <p>Sin firma</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-warning" onclick="iniciarFirma('acudiente')" style="margin-top: 10px; width: 100%;">
+                            ✏️ Firmar Digitalmente
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Firma del Estudiante (para mayores de 14 años) -->
+                <div class="form-field">
+                    <label>Firma Digital del Estudiante (si es mayor de 14 años)</label>
+                    <div class="signature-container">
+                        <div id="firmaEstudiantePreview" style="border: 2px solid #ddd; height: 150px; background: white; display: flex; align-items: center; justify-content: center; border-radius: 5px;">
+                            <div style="text-align: center; color: #999;">
+                                <p style="font-size: 48px; margin: 0;">✍️</p>
+                                <p>Sin firma</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-warning" onclick="iniciarFirma('estudiante')" style="margin-top: 10px; width: 100%;">
+                            ✏️ Firmar Digitalmente
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 12: DOCUMENTOS REQUERIDOS -->
+                <div class="form-section">11. DOCUMENTOS REQUERIDOS</div>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>⚠️ Importante:</strong> Todos los documentos deben ser legibles y estar en formato PDF o imagen (JPG/PNG). Tamaño máximo por archivo: 5MB.
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                    <div class="form-field">
+                        <label>1. Documento de Identidad del Estudiante *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">Tarjeta de Identidad, Registro Civil o Cédula según la edad</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>2. Registro Civil de Nacimiento *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">Copia autenticada para estudiantes nuevos</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>3. Certificados de Estudios Anteriores *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">Desde 5° primaria para bachillerato, años anteriores para primaria</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>4. Último Boletín de Calificaciones *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">Del año en curso o año anterior</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>5. Paz y Salvo del Colegio Anterior</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <small style="color: #666;">Si aplica</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>6. Certificado de Afiliación a EPS *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">No mayor a 30 días</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>7. Carnet de Vacunación</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <small style="color: #666;">Obligatorio para preescolar y primaria</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>8. Fotografías 3x4 del Estudiante *</label>
+                        <input type="file" accept=".jpg,.jpeg,.png" required>
+                        <small style="color: #666;">2 fotos recientes, fondo blanco</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>9. Documento de Identidad del Acudiente *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">Cédula por ambas caras</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>10. Recibo de Servicio Público *</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small style="color: #666;">Para verificar dirección de residencia (no mayor a 2 meses)</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>11. Certificado del SISBEN</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <small style="color: #666;">Si aplica</small>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label>12. Certificado de Desplazamiento</label>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png">
+                        <small style="color: #666;">Si aplica - expedido por la entidad competente</small>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN 12: AUTORIZACIONES Y COMPROMISOS -->
+                <div class="form-section">12. AUTORIZACIONES Y COMPROMISOS</div>
+                <div style="background: #e8f5e9; padding: 20px; border-radius: 5px;">
+                    <div class="form-field" style="background: white;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" style="width: auto; margin-top: 5px;" required>
+                            <span><strong>Autorización de Tratamiento de Datos Personales *</strong><br>
+                            Autorizo al Colegio Técnico Vicente Azuero para el tratamiento de los datos personales suministrados en este formulario, conforme a la Ley 1581 de 2012.</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-field" style="background: white;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" style="width: auto; margin-top: 5px;" required>
+                            <span><strong>Veracidad de la Información *</strong><br>
+                            Declaro que toda la información suministrada es verídica y puede ser verificada.</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-field" style="background: white;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" style="width: auto; margin-top: 5px;" required>
+                            <span><strong>Aceptación del Manual de Convivencia *</strong><br>
+                            Me comprometo a conocer, respetar y cumplir el Manual de Convivencia del colegio.</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-field" style="background: white;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px;">
+                            <input type="checkbox" style="width: auto; margin-top: 5px;" required>
+                            <span><strong>Autorización de Uso de Imagen *</strong><br>
+                            Autorizo el uso de fotografías y videos del estudiante en actividades institucionales.</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- RESUMEN FINAL -->
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-top: 30px;">
+                    <h3 style="color: #1565c0; margin-bottom: 15px;">📋 RESUMEN DEL FORMULARIO COMPLETO</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <strong>Total de Secciones:</strong> 12<br>
+                            <strong>Total de Campos:</strong> 100+<br>
+                            <strong>Campos Obligatorios:</strong> 45+
+                        </div>
+                        <div>
+                            <strong>Documentos Requeridos:</strong> 12<br>
+                            <strong>Tiempo Estimado:</strong> 30-45 minutos<br>
+                            <strong>Estado:</strong> <span style="color: green;">✅ Completo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-success" style="font-size: 18px; padding: 15px 40px;" onclick="alert('Formulario enviado exitosamente!')">
+                        📤 ENVIAR FORMULARIO DE INSCRIPCIÓN
+                    </button>
+                </div></div>
+      <div id="customFieldsBox" class="grid cols-2" style="margin-top:10px"></div>
+      <div class="toolbar right"><button class="btn success" onclick="enviarInscripcionDesdeFormulario()">Enviar Inscripción</button></div>
+    </div>
+  </section>
+
+  <section id="inscripciones" class="section">
+    <div class="card">
+      <h3 class="h">Gestión de Inscripciones</h3>
+      <div class="toolbar">
+        <select id="fltEstado" onchange="pintarTabla()">
+          <option value="">Todos los estados</option>
+          <option value="pending">Pendiente</option>
+          <option value="documents">Solicitar Documentos</option>
+          <option value="approved">Admitido</option>
+          <option value="rejected">No Admitido</option>
+          <option value="blocked">Bloqueado</option>
+        </select>
+        <select id="fltSede" onchange="pintarTabla()"></select>
+        <select id="fltJornada" onchange="pintarTabla()">
+          <option value="">Todas las jornadas</option>
+          <option>Mañana</option><option>Tarde</option><option>Única</option><option>Nocturna</option>
+        </select>
+        <input id="fltSearch" placeholder="Buscar por nombre o documento" oninput="pintarTabla()" style="flex:1">
+        <button class="btn info" onclick="exportarCSV()">Exportar CSV</button>
+      </div>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>Fecha</th><th>Nombre</th><th>Documento</th><th>Grado</th><th>Sede</th><th>Jornada</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="tbodyInsc"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="roles" class="section">
+    <div class="card">
+      <h3 class="h">Configuración de Sedes (hasta 5)</h3>
+      <p class="hint">Edita los nombres; aparecen en Formulario, Filtros y Reglas.</p>
+      <div id="sedesInputs" class="grid cols-3"></div>
+      <div class="toolbar right"><button class="btn success" onclick="guardarSedes()">Guardar Sedes</button></div>
+    </div>
+    <div class="card">
+      <h3 class="h">Aprobadores (asigna sede/jornada)</h3>
+      <p class="hint">Máximo 5 personas aprobando. Cada una gestiona solo su sede/jornada.</p>
+      <div id="aprobadoresBox" class="grid cols-2"></div>
+      <div class="toolbar right"><button class="btn success" onclick="guardarAprobadores()">Guardar Aprobadores</button></div>
+    </div>
+  </section>
+
+  <section id="editor" class="section">
+    <div class="card">
+      <h3 class="h">Editor de Formulario (ocultar/renombrar/agregar campos)</h3>
+      <p class="hint">Detecta campos por etiquetas (.form-field o &lt;label&gt;). Cambios guardados en tu navegador.</p>
+      <div class="grid cols-2">
+        <div class="card"><div class="sub">Campos detectados</div><div id="fieldList"></div></div>
+        <div class="card">
+          <div class="sub">Agregar campo personalizado</div>
+          <label>Etiqueta</label><input id="cf_label" placeholder="Ej. EPS del estudiante">
+          <label>Tipo</label><select id="cf_type"><option value="text">Texto</option><option value="number">Número</option><option value="select">Lista (select)</option></select>
+          <label>Opciones (solo Lista, separadas por coma)</label><input id="cf_opts" placeholder="Opción 1, Opción 2">
+          <div class="toolbar right"><button class="btn success" onclick="agregarCampoPersonalizado()">Agregar</button></div>
+          <div class="sub">Campos personalizados agregados</div>
+          <div id="customList"></div>
+        </div>
+      </div>
+      <div class="toolbar right"><button class="btn info" onclick="reconstruirFormulario()">Aplicar cambios</button><button class="btn" onclick="resetEditor()">Restablecer</button></div>
+    </div>
+  </section>
+
+  <section id="padres" class="section">
+    <div class="card login-box" id="padresLogin">
+      <h3 class="h">Ingreso Padres de Familia</h3>
+      <p class="hint">Ingrese su documento para acceder. Si no está registrado, se creará una cuenta básica.</p>
+      <label>Documento del padre/madre</label><input id="docPadre" placeholder="Documento del acudiente">
+      <label>Nombre del acudiente (opcional)</label><input id="nomPadre" placeholder="Nombre y apellido">
+      <label>Correo (opcional)</label><input id="mailPadre" placeholder="correo@dominio.com">
+      <div class="toolbar right"><button class="btn primary" onclick="loginPadre()">Entrar</button></div>
+    </div>
+    <div class="card" id="padresPanel" style="display:none">
+      <div class="toolbar"><div id="padresInfo" class="chip"></div><div style="flex:1"></div><button class="btn" onclick="logoutPadre()">Cerrar sesión</button></div>
+      <div class="grid cols-2">
+        <div class="card"><h3 class="h">Mis solicitudes</h3><div id="listaHijos"></div></div>
+        <div class="card"><h3 class="h">Nueva inscripción</h3><p class="hint">Creará una inscripción y abrirá el formulario asociando tu documento.</p><button class="btn success" onclick="nuevaInscripcionComoPadre()">Crear nueva inscripción</button></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">App Local – Modo público (#public) y Portal (#padres). Lista para conectar a backend cuando quieras.</div>
+</div>
+
+<script>
+  const LS = { get:(k,def)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? def }catch(e){ return def } }, set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)) };
+  const estados = { pending:{txt:'Pendiente',cls:'pending'}, documents:{txt:'Solicitar Documentos',cls:'documents'}, approved:{txt:'Admitido',cls:'approved'}, rejected:{txt:'No Admitido',cls:'rejected'}, blocked:{txt:'Bloqueado',cls:'blocked'} };
+  const pill = (st)=>{ const e=estados[st]||{txt:st,cls:'pending'}; return '<span class="pill '+e.cls+'">'+e.txt+'</span>'; }
+  const go = (id)=>{ document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); refreshKPIs(); if(id==='inscripciones')pintarTabla(); if(id==='editor')initEditor(); if(id==='padres')renderPadresPanel(); };
+
+  const defaultSedes = ['Sede A','Sede B','Sede C','Sede D','Sede E'];
+  let sedes = LS.get('sedes', defaultSedes);
+  let insc = LS.get('inscripcionesData', []);
+  let aprobadores = LS.get('aprobadores', [
+    {id:'ap1',nombre:'Coordinador A',email:'a@colegio.edu',sedes:['Sede A'],jornadas:['Mañana']},
+    {id:'ap2',nombre:'Coordinador B',email:'b@colegio.edu',sedes:['Sede B'],jornadas:['Tarde']}
+  ]);
+  let designer = LS.get('designer', {hidden:{}, labels:{}, custom:[]});
+  let padres = LS.get('padres', {}); 
+  let padreSesion = LS.get('padreSesion', null); 
+
+  function actualizarLinks(){
+    const base = window.location.href.split('#')[0];
+    document.getElementById('linkPublico').href = base + '#public';
+    document.getElementById('linkPadres').href  = base + '#padres';
+  }
+
+  function renderSedesInputs(){
+    const box=document.getElementById('sedesInputs'); if(!box) return;
+    box.innerHTML='';
+    for(let i=0;i<5;i++){ const v=sedes[i]??''; box.innerHTML+=`<div><label>Sede ${i+1}</label><input id="sede_${i}" value="${v}" placeholder="Nombre de la sede ${i+1}"></div>`; }
+    const flt=document.getElementById('fltSede'); if(flt) flt.innerHTML='<option value="">Todas las sedes</option>'+sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join('');
+  }
+  function __guardarSedes_orig(){
+    const arr=[]; for(let i=0;i<5;i++){ const v=document.getElementById(`sede_${i}`).value.trim(); if(v) arr.push(v); }
+    sedes = arr; LS.set('sedes',arr); alert('Sedes guardadas'); renderSedesInputs(); pintarTabla();
+  }
+
+  function renderAprobadores(){
+    const box=document.getElementById('aprobadoresBox'); if(!box) return;
+    box.innerHTML='';
+    for(let i=0;i<5;i++){
+      const a=aprobadores[i]||{id:'ap'+(i+1),nombre:'',email:'',sedes:[],jornadas:[]};
+      box.innerHTML += `
+        <div class="card">
+          <div class="sub">Aprobador ${i+1}</div>
+          <label>Nombre</label><input id="ap_${i}_nom" value="${a.nombre||''}">
+          <label>Email</label><input id="ap_${i}_mail" value="${a.email||''}">
+          <label>Sedes</label>
+          <select id="ap_${i}_sedes" multiple size="5">${sedes.filter(Boolean).map(s=>`<option ${a.sedes?.includes(s)?'selected':''}>${s}</option>`).join('')}</select>
+          <label>Jornadas</label>
+          <select id="ap_${i}_jorn" multiple size="4">
+            ${['Mañana','Tarde','Única','Nocturna'].map(j=>`<option ${a.jornadas?.includes(j)?'selected':''}>${j}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+  }
+  function guardarAprobadores(){
+    const arr=[];
+    for(let i=0;i<5;i++){
+      const id='ap'+(i+1);
+      const nombre = document.getElementById(`ap_${i}_nom`)?.value?.trim()||'';
+      const email = document.getElementById(`ap_${i}_mail`)?.value?.trim()||'';
+      const sedesSel = Array.from(document.getElementById(`ap_${i}_sedes`)?.selectedOptions||[]).map(o=>o.value);
+      const jornSel  = Array.from(document.getElementById(`ap_${i}_jorn`)?.selectedOptions||[]).map(o=>o.value);
+      if(nombre){ arr.push({id,nombre,email,sedes:sedesSel,jornadas:jornSel}); }
+    }
+    aprobadores = arr; LS.set('aprobadores',arr); renderAprobadores(); alert('Aprobadores guardados');
+  }
+
+  function scanFields(){
+    let fields=[...document.querySelectorAll('#formContainer .form-field')].map((n,i)=>({el:n, label:(n.querySelector('label')?.textContent||('Campo '+(i+1))).trim()}));
+    if(fields.length===0){
+      fields=[...document.querySelectorAll('#formContainer label')].map((lb,i)=>({el:lb.closest('div')||lb.parentElement, label:(lb.textContent||('Campo '+(i+1))).trim(), labelNode:lb}));
+    }
+    return fields.filter(f=>f.label);
+  }
+  function applyDesigner(){
+    const fields=scanFields();
+    fields.forEach(f=>{
+      const orig=f.label;
+      const newLabel = designer.labels[orig];
+      const labelNode = f.el.querySelector('label') || f.labelNode;
+      if(labelNode && newLabel){ labelNode.textContent = newLabel; }
+      if(designer.hidden[orig]){ f.el.style.display='none'; } else { f.el.style.display=''; }
+    });
+    renderCustomFields();
+  }
+  function qTextStarts(label){
+    label = (label||'').toLowerCase();
+    const nodes = [...document.querySelectorAll('#formContainer .form-field')];
+    for(const n of nodes){
+      const lab = (n.querySelector('label')?.textContent||'').toLowerCase().trim();
+      if(lab.startsWith(label)){ const inp=n.querySelector('input,select,textarea'); if(inp) return (inp.value||'').trim(); }
+    }
+    const labs = [...document.querySelectorAll('#formContainer label')];
+    for(const lb of labs){
+      const t = (lb.textContent||'').toLowerCase().trim();
+      if(t.startsWith(label)){
+        const id = lb.getAttribute('for');
+        const inp = id ? document.getElementById(id) : lb.parentElement.querySelector('input,select,textarea');
+        if(inp) return (inp.value||'').trim();
+      }
+    }
+    return '';
+  }
+  function leerCustomFields(){
+    const values={};
+    for(const f of (designer.custom||[])){
+      const el = document.getElementById('cfv_'+f.id);
+      if(!el) continue;
+      values[f.label]= el.value;
+    }
+    return values;
+  }
+  function enviarInscripcionDesdeFormulario(){
+    const nombre = ((qTextStarts('primer nombre')||'')+' '+(qTextStarts('primer apellido')||'') ).trim() || (qTextStarts('nombres')||'')+' '+(qTextStarts('apellidos')||'');
+    const doc = qTextStarts('número de documento') || qTextStarts('numero de documento') || qTextStarts('documento');
+    const grado = qTextStarts('grado al que aspira') || qTextStarts('grado solicitado') || qTextStarts('grado');
+    const sede = qTextStarts('sede');
+    const jornada = qTextStarts('jornada');
+    const email = qTextStarts('correo');
+    const tel = qTextStarts('celular') || qTextStarts('teléfono') || qTextStarts('telefono');
+    if(!nombre || !doc || !grado || !sede || !jornada){ alert('Completa al menos: Nombre, Documento, Grado, Sede y Jornada.'); return; }
+    const item = {
+      id: 'INS'+Date.now(),
+      fecha: new Date().toISOString().slice(0,10),
+      nombre, doc, grado, sede, jornada, email, tel,
+      estado:'pending', historial:[{f:new Date().toISOString(),e:'pending',u:'Sistema'}],
+      parentDoc: padreSesion?.doc || null,
+      extras: leerCustomFields()
+    };
+    insc.unshift(item); LS.set('inscripcionesData',insc);
+    alert('Inscripción registrada. ID: '+item.id);
+    refreshKPIs(); pintarTabla();
+    if(padreSesion){ go('padres'); } else { go('inscripciones'); }
+  }
+
+  function renderSedesFiltros(){
+    const fltS=document.getElementById('fltSede'); if(!fltS) return;
+    fltS.innerHTML='<option value="">Todas las sedes</option>'+sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join('');
+  }
+  function pintarTabla(){
+    const t=document.getElementById('tbodyInsc'); if(!t) return;
+    const e=document.getElementById('fltEstado').value;
+    const s=document.getElementById('fltSede').value;
+    const j=document.getElementById('fltJornada').value;
+    const q=(document.getElementById('fltSearch').value||'').toLowerCase();
+    const rows=insc.filter(r=>(!e||r.estado===e)).filter(r=>(!s||r.sede===s)).filter(r=>(!j||r.jornada===j)).filter(r=>(!q||r.nombre.toLowerCase().includes(q)||String(r.doc).includes(q)));
+    t.innerHTML = rows.map(r=>`
+      <tr>
+        <td>${r.fecha}</td><td>${r.nombre}</td><td>${r.doc}</td><td>${r.grado}</td><td>${r.sede}</td><td>${r.jornada}</td><td>${pill(r.estado)}</td>
+        <td><div class="toolbar"><button class="btn ghost" onclick="ver('${r.id}')">Ver</button><button class="btn success" onclick="setEstado('${r.id}','approved')">Admitido</button><button class="btn warn" onclick="setEstado('${r.id}','documents')">Solicitar Docs</button><button class="btn danger" onclick="setEstado('${r.id}','rejected')">No Admitido</button><button class="btn" onclick="setEstado('${r.id}','blocked')">Bloqueado</button></div></td>
+      </tr>`).join('');
+  }
+  function ver(id){
+    const r=insc.find(x=>String(x.id)===String(id)); if(!r) return;
+    const hist=r.historial?.map(h=>`<li>${new Date(h.f).toLocaleString()} – ${estados[h.e]?.txt||h.e} (${h.u})</li>`).join('')||'';
+    const rows=Object.entries(r).filter(([k])=>!['historial','extras'].includes(k)).map(([k,v])=>`<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+    const extras = Object.entries(r.extras||{}).map(([k,v])=>`<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+    abrirModal(`<div class="card">
+      <h3 class="h">Inscripción ${r.id} ${pill(r.estado)}</h3>
+      <div class="grid cols-2">
+        <div class="card"><table>${rows}${extras?`<tr><th colspan=2>Campos personalizados</th></tr>${extras}`:''}</table></div>
+        <div class="card">
+          <div class="sub">Actualizar estado</div>
+          <div class="toolbar">
+            <button class="btn success" onclick="setEstado('${r.id}','approved',true)">Admitido</button>
+            <button class="btn warn" onclick="setEstado('${r.id}','documents',true)">Solicitar Docs</button>
+            <button class="btn danger" onclick="setEstado('${r.id}','rejected',true)">No Admitido</button>
+            <button class="btn" onclick="setEstado('${r.id}','blocked',true)">Bloqueado</button>
+          </div>
+          <div class="sub">Historial</div>
+          <ul>${hist||'<li>Sin historial</li>'}</ul>
+        </div>
+      </div>
+      <div class="toolbar right"><button class="btn" onclick="cerrarModal()">Cerrar</button></div>
+    </div>`);
+  }
+  function setEstado(id,estado,keepModal=false){
+    const r=insc.find(x=>String(x.id)===String(id)); if(!r) return;
+    r.estado=estado; r.historial = r.historial||[]; r.historial.push({f:new Date().toISOString(),e:estado,u:'Aprobador'});
+    LS.set('inscripcionesData',insc);
+    pintarTabla(); refreshKPIs(); if(keepModal) ver(id); else cerrarModal();
+  }
+  function exportarCSV(){
+    const cols = ['id','fecha','nombre','doc','grado','sede','jornada','estado','email','tel','parentDoc'];
+    const lines = [cols.join(',')].concat(insc.map(r=>cols.map(c=>`"${String(r[c]??'').replaceAll('"','""')}"`).join(',')));
+    const blob = new Blob([lines.join('\n')],{type:'text/csv'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='inscripciones.csv'; a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  function refreshKPIs(){ const T=insc.length, A=insc.filter(r=>r.estado==='approved').length, P=insc.filter(r=>['pending','documents'].includes(r.estado)).length; document.getElementById('kpiTotal').textContent=T; document.getElementById('kpiAprob').textContent=A; document.getElementById('kpiPend').textContent=P; }
+
+  async function loginPadre(){
+    const doc = (document.getElementById('docPadre').value||'').trim();
+    const nombre = (document.getElementById('nomPadre').value||'').trim();
+    const correo = (document.getElementById('mailPadre').value||'').trim();
+    if(!doc) return alert('Escribe tu documento');
+    padres[doc] = padres[doc] || {nombre,correo};
+    if(nombre) padres[doc].nombre = nombre;
+    if(correo) padres[doc].correo = correo;
+    LS.set('padres',padres);
+    padreSesion = {doc}; LS.set('padreSesion',padreSesion);
+    renderPadresPanel();
+  }
+  function logoutPadre(){ padreSesion=null; LS.set('padreSesion',null); document.getElementById('padresPanel').style.display='none'; document.getElementById('padresLogin').style.display='block'; }
+  function renderPadresPanel(){
+    if(!document.getElementById('padresLogin')) return;
+    if(padreSesion && padreSesion.doc){
+      document.getElementById('padresLogin').style.display='none';
+      document.getElementById('padresPanel').style.display='block';
+      const info = padres[padreSesion.doc] || {};
+      document.getElementById('padresInfo').textContent = `Acudiente ${info.nombre||''} • Doc: ${padreSesion.doc}`;
+      const mias = insc.filter(r=>r.parentDoc===padreSesion.doc);
+      const box = document.getElementById('listaHijos');
+      if(mias.length===0){ box.innerHTML='<p class="muted">Aún no tienes inscripciones.</p>'; }
+      else{
+        box.innerHTML = mias.map(r=>`<div class="card"><div class="grid cols-2"><div><b>${r.nombre}</b><div class="hint">Grado ${r.grado} • ${r.sede} • ${r.jornada}</div></div><div>${pill(r.estado)}</div></div></div>`).join('');
+      }
+    }else{
+      document.getElementById('padresLogin').style.display='block';
+      document.getElementById('padresPanel').style.display='none';
+    }
+  }
+  function nuevaInscripcionComoPadre(){
+    if(!padreSesion){ go('padres'); return; }
+    go('formulario');
+    const banner = document.getElementById('parentBanner');
+    banner.style.display = 'block';
+    banner.textContent = 'Creando inscripción asociada al acudiente con documento: '+padreSesion.doc;
+  }
+
+  let modal; 
+  function abrirModal(html){ if(!modal){ modal=document.createElement('div'); modal.style.cssText='position:fixed;inset:0;background:rgba(2,6,23,.55);display:flex;align-items:center;justify-content:center;padding:24px;z-index:50'; modal.innerHTML='<div id="modalCard" class="card" style="max-width:1000px;width:100%;max-height:90vh;overflow:auto"></div>'; document.body.appendChild(modal);} document.getElementById('modalCard').innerHTML=html; modal.style.display='flex'; }
+  function cerrarModal(){ if(modal) modal.style.display='none'; }
+
+  function aplicarModoPublico(){
+    const isPublic = window.location.hash && window.location.hash.toLowerCase().includes('public');
+    if(isPublic){
+      document.getElementById('topbar').style.display='none';
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      document.getElementById('formulario').classList.add('active');
+    }
+  }
+
+  function renderSedesFiltros(){ const fltS=document.getElementById('fltSede'); if(!fltS) return; fltS.innerHTML='<option value="">Todas las sedes</option>'+sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join(''); }
+  function init(){
+  try{refrescarFormulario();}catch(e){}
+
+    actualizarLinks();
+    renderSedesInputs(); renderSedesFiltros();
+    renderAprobadores();
+    refreshKPIs(); pintarTabla();
+    applyDesigner();
+    aplicarModoPublico();
+    if(window.lo
+// ==== FUSIÓN: Sincronizar Sede/Jornada, enganchar form interno, y utilidades ====
+
+// Sincroniza los <select> de Sede y Jornada del formulario con Roles
+function syncFormularioConSedesYJornadas(){
+  try{
+    // Sede
+    let selectSede=null;
+    document.querySelectorAll('#formContainer label').forEach(lb=>{
+      const t=(lb.textContent||'').trim().toLowerCase();
+      if(!selectSede && t.startsWith('sede')){
+        const id=lb.getAttribute('for');
+        selectSede = id ? document.getElementById(id) : lb.parentElement.querySelector('select');
+      }
+    });
+    if(selectSede && Array.isArray(sedes)){
+      const cur=selectSede.value;
+      selectSede.innerHTML = '<option value=\"\">Seleccione...</option>' + sedes.filter(Boolean).map(s=>`<option>${s}</option>`).join('');
+      if([...selectSede.options].some(o=>o.value===cur)) selectSede.value=cur;
+    }
+    // Jornada (opcional)
+    let selectJ=null;
+    document.querySelectorAll('#formContainer label').forEach(lb=>{
+      const t=(lb.textContent||'').trim().toLowerCase();
+      if(!selectJ && t.startsWith('jornada')){
+        const id=lb.getAttribute('for');
+        selectJ = id ? document.getElementById(id) : lb.parentElement.querySelector('select');
+      }
+    });
+    if(selectJ){
+      const jornadas=['Mañana','Tarde','Única','Nocturna'];
+      const cur=selectJ.value;
+      selectJ.innerHTML = '<option value=\"\">Seleccione...</option>' + jornadas.map(j=>`<option>${j}</option>`).join('');
+      if([...selectJ.options].some(o=>o.value===cur)) selectJ.value=cur;
+    }
+  }catch(e){ console.warn('syncFormularioConSedesYJornadas()', e); }
+}
+
+// Engancha el submit del <form> interno y botones nativos con texto "enviar formulario"
+function engancharSubmitInterno(){
+  const cont=document.getElementById('formContainer');
+  if(!cont) return;
+  const form=cont.querySelector('form');
+  if(form){
+    form.addEventListener('submit', (e)=>{ e.preventDefault(); enviar(); });
+  }
+  cont.querySelectorAll('button').forEach(b=>{
+    const t=(b.textContent||'').toLowerCase();
+    if(t.includes('enviar formulario')){
+      b.addEventListener('click', (e)=>{ e.preventDefault(); enviar(); });
+    }
+  });
+}
+
+// Reaplica editor (renombrar/ocultar) y vuelve a enganchar envío
+function refrescarFormulario(){
+  try{ if(typeof applyEd==='function') applyEd(); }catch(e){}
+  syncFormularioConSedesYJornadas();
+  engancharSubmitInterno();
+}
+
+
+// Envoltura para guardarSedes → sincroniza Sede/Jornada al guardar
+function guardarSedes(){
+  try{ return __guardarSedes_orig.apply(this, arguments); }finally{ syncFormularioConSedesYJornadas(); }
+}
+
+cation.hash==='#padres'){ go('padres'); }
+  }
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
